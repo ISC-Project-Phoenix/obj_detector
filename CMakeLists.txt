@@ -13,6 +13,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
+find_package(image_transport REQUIRED)
+find_package(message_filters REQUIRED)
 find_package(OpenCV 4.2.0 REQUIRED)
 
 # Add source for node executable (link non-ros dependencies here)
@@ -28,6 +30,8 @@ set(dependencies
         sensor_msgs
         std_msgs
         geometry_msgs
+        image_transport
+        message_filters
         cv_bridge
         OpenCV
         )
