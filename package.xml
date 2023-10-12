@@ -19,6 +19,7 @@
     <depend>libopencv-dev</depend>
     <depend>image_transport</depend>
     <depend>message_filters</depend>
+    <depend>image_geometry</depend>
 
     <test_depend>ament_lint_auto</test_depend>
     <test_depend>ament_cmake_flake8</test_depend>

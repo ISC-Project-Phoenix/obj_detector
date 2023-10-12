@@ -20,8 +20,14 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
 
     // Register callback for synced images
     this->sync->registerCallback(std::bind(&ObjDetectorNode::process_image, this, _1, _2));
+
+    // Copy rgb camera info directly into model
+    this->rgb_info_sub = this->create_subscription<sensor_msgs::msg::CameraInfo>(
+        "/camera/mid/rgb/camera_info", 1,
+        [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr ci) { this->rgb_model.fromCameraInfo(ci); });
+
     // Output detected objects
-    this->point_pub = this->create_publisher<geometry_msgs::msg::Point>("/object_poses", 5);
+    this->point_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/object_poses", 5);
 }
 
 void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
@@ -29,7 +35,19 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     auto cv_rgb = cv_bridge::toCvShare(rgb);
     auto rgb_mat = cv_rgb->image;
 
-    // TODO detect objects
-    cv::imshow("rgb", rgb_mat);
-    cv::waitKey(1);
+    // First detect location of objects in pixel space
+    auto object_locations = this->detect_objects(rgb_mat);
+    // Then project to camera space
+    auto poses = this->project_to_world(object_locations, depth);
+
+    this->point_pub->publish(poses);
+}
+
+std::vector<cv::Scalar> ObjDetectorNode::detect_objects(const cv::Mat& rgb) {
+    //TODO detect
+}
+
+geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Scalar>& object_locations,
+                                                                const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
+    //TODO project
 }

@@ -12,6 +12,7 @@ find_package(rclcpp REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(image_geometry REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(message_filters REQUIRED)
@@ -32,6 +33,7 @@ set(dependencies
         geometry_msgs
         image_transport
         message_filters
+        image_geometry
         cv_bridge
         OpenCV
         )
