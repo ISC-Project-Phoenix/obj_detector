@@ -26,6 +26,8 @@ private:
     /// Geometric model of the rgb camera
     image_geometry::PinholeCameraModel rgb_model;
 
+    bool debug;
+
 public:
     ObjDetectorNode(const rclcpp::NodeOptions& options);
 
@@ -34,9 +36,9 @@ public:
                        const sensor_msgs::msg::Image::ConstSharedPtr& depth);
 
     /// Returns the u,v pixel locations of every detected object in the unrectified image.
-    std::vector<cv::Scalar> detect_objects(const cv::Mat& rgb);
+    std::vector<cv::Point2d> detect_objects(const cv::Mat& rgb);
 
     /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
-    geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Scalar>& object_locations,
+    geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Point2d>& object_locations,
                                                    const sensor_msgs::msg::Image::ConstSharedPtr& depth);
 };
