@@ -39,9 +39,9 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     // First detect location of objects in pixel space
     auto object_locations = this->detect_objects(rgb_mat);
     // Then project to camera space
-    auto poses = this->project_to_world(object_locations, depth);
+    //auto poses = this->project_to_world(object_locations, depth); TODO add when depth done
 
-    this->point_pub->publish(poses);
+    //this->point_pub->publish(poses);
 }
 
 std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb) {
@@ -57,12 +57,12 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb) {
     cv::inRange(mat, lowerb, upperb, mask);
 
     // Find contours (Boundary lines of each masked area)
-    std::vector<std::vector<cv::Point>> contours;
-    std::vector<cv::Vec4i> hierarchy;
+    std::vector <std::vector<cv::Point>> contours;
+    std::vector <cv::Vec4i> hierarchy;
     cv::findContours(mask, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     // Code to calculate and annotate centroids (Center of each masked area)
-    std::vector<cv::Point2d> centers;
+    std::vector <cv::Point2d> centers;
     for (auto &contour: contours) {
         // Calculate moments for each contour
         cv::Moments M = cv::moments(contour);
@@ -86,7 +86,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb) {
 
         cv::imshow("mask", mask);  // Shows image of mask
         cv::imshow("centers", dbg);  // Shows image of mask
-        cv::waitKey(0);               // Lets you see the images above.
+        cv::pollKey();               // Lets you see the images above.
     }
 
     return centers;
