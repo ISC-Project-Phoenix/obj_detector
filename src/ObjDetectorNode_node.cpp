@@ -1,14 +1,20 @@
 #include "obj_detector/ObjDetectorNode_node.hpp"
 
 #include "cv_bridge/cv_bridge.h"
+#include "opencv2/core/ocl.hpp"
 #include "opencv2/opencv.hpp"
 
 // For _1
 using namespace std::placeholders;
 
 ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("ObjDetectorNode", options) {
+    // Enable opencl acceleration
+    cv::ocl::setUseOpenCL(true);
+    RCLCPP_INFO(this->get_logger(), "using opencl: %u", cv::ocl::haveOpenCL());
+
     // Either "compressed" or "raw"
     std::string transport_type = this->declare_parameter("transport_type", "raw");
+    // Show debug views or not
     this->debug = this->declare_parameter<bool>("debug", true);
 
     RCLCPP_INFO(this->get_logger(), "Detecting using transport: %s", transport_type.c_str());
@@ -45,17 +51,20 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     //this->point_pub->publish(poses);
 }
 
-std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb) {
-    cv::Mat mat;
-    cv::cvtColor(rgb, mat, cv::COLOR_BGR2HSV);  // Changes image to HSV (Hue, Sat, value)
+std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat) {
+    // Copy to gpu
+    auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_SHARED_MEMORY);
+
+    cv::UMat hsv;
+    cv::cvtColor(rgb, hsv, cv::COLOR_BGR2HSV);  // Changes image to HSV (Hue, Sat, value)
 
     //Setting the HSV values to the color we are masking.
     cv::Scalar upperb = cv::Scalar(20, 255, 255);
     cv::Scalar lowerb = cv::Scalar(0, 150, 120);
 
     //Applying the above bounds to the image to create mask
-    cv::Mat mask;
-    cv::inRange(mat, lowerb, upperb, mask);
+    cv::UMat mask;
+    cv::inRange(hsv, lowerb, upperb, mask);
 
     // Find contours (Boundary lines of each masked area)
     std::vector<std::vector<cv::Point>> contours;
@@ -78,7 +87,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb) {
 
     // Show debug windows
     if (this->debug) {
-        cv::Mat dbg;
+        cv::UMat dbg;
         rgb.copyTo(dbg);
         for (auto& center : centers) {
             cv::circle(dbg, center, 5, cv::Scalar(255, 0, 0), -1);
