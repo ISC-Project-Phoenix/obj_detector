@@ -1,5 +1,9 @@
 #include "obj_detector/ObjDetectorNode_node.hpp"
 
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/LinearMath/Vector3.h>
+#include <tf2/convert.h>
+
 #include "cv_bridge/cv_bridge.h"
 #include "opencv2/core/ocl.hpp"
 #include "opencv2/opencv.hpp"
@@ -35,6 +39,10 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
 
     // Output detected objects
     this->point_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/object_poses", 5);
+
+    // TF setup
+    this->tf_buffer = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    this->tf_listen = std::make_unique<tf2_ros::TransformListener>(*tf_buffer);
 }
 
 void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
@@ -43,12 +51,15 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     auto cv_rgb = cv_bridge::toCvShare(rgb, "bgr8");
     auto rgb_mat = cv_rgb->image;
 
+    auto cv_depth = cv_bridge::toCvShare(depth);
+    auto depth_mat = cv_depth->image;
+
     // First detect location of objects in pixel space
     auto object_locations = this->detect_objects(rgb_mat);
     // Then project to camera space
-    //auto poses = this->project_to_world(object_locations, depth); TODO add when depth done
+    auto poses = this->project_to_world(object_locations, depth_mat);
 
-    //this->point_pub->publish(poses);
+    this->point_pub->publish(poses);
 }
 
 std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat) {
@@ -147,6 +158,28 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 }
 
 geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Point2d>& object_locations,
-                                                                const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
-    //TODO project
+                                                                const cv::Mat& depth) {
+    geometry_msgs::msg::PoseArray poses{};
+    poses.header.frame_id = "mid_cam_link";  //TODO param
+    poses.header.stamp = this->get_clock()->now();
+
+    for (cv::Point2d center_distort : object_locations) {
+        // Rectify points instead of whole image
+        cv::Point2d center = this->rgb_model.rectifyPoint(center_distort);
+
+        // Project pixel to camera space
+        auto ray = this->rgb_model.projectPixelTo3dRay(
+            center);  //TODO visualise to make sure we are in correct coordinate system
+        float dist = depth.at<float>(center);
+        // Just resize the ray to be a vector at the distance of the depth pixel. This is in camera space
+        auto point_3d = dist / cv::norm(ray) * ray;
+
+        geometry_msgs::msg::Pose p{};
+        p.position.x = point_3d.x;
+        p.position.y = point_3d.y;
+        p.position.z = point_3d.z;
+        poses.poses.push_back(p);
+    }
+
+    return poses;
 }
