@@ -55,6 +55,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
     // Copy to gpu
     auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_SHARED_MEMORY);
 
+
     // Define gamma and create a lookup table
     //gamma will brighten shadows on image
     double gamma = 0.7; // Value < 1 'Image brightens shadows. Value > 1 Image darkens shadows
@@ -73,12 +74,12 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 
     //Setting the HSV values to the color we are masking.
     cv::Scalar upperb = cv::Scalar(25, 255, 255);
-    cv::Scalar lowerb = cv::Scalar(1, 120, 120);
+    cv::Scalar lowerb = cv::Scalar(1, 120, 130);
 
 
     //Applying the above bounds to the gamma_image to create mask
     cv::UMat mask;
-    cv::inRange(mat_gamma_corrected, lowerb, upperb, mask);
+    cv::inRange(hsv, lowerb, upperb, mask);
 
 
     // Define the structuring element for the morphological operations (Required for dilation operation)
