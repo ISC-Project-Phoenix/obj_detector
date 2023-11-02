@@ -7,7 +7,7 @@
 // For _1
 using namespace std::placeholders;
 
-ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("ObjDetectorNode", options) {
+ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions &options) : Node("ObjDetectorNode", options) {
     // Enable opencl acceleration
     cv::ocl::setUseOpenCL(true);
     RCLCPP_INFO(this->get_logger(), "using opencl: %u", cv::ocl::haveOpenCL());
@@ -23,22 +23,22 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     this->rgb_syncer = std::make_unique<image_transport::SubscriberFilter>(this, "/camera/mid/rgb", transport_type);
     this->depth_syncer = std::make_unique<image_transport::SubscriberFilter>(this, "/camera/mid/depth", "raw");
     this->sync =
-        std::make_unique<message_filters::Synchronizer<MySyncPolicy>>(MySyncPolicy(10), *rgb_syncer, *depth_syncer);
+            std::make_unique<message_filters::Synchronizer<MySyncPolicy>>(MySyncPolicy(10), *rgb_syncer, *depth_syncer);
 
     // Register callback for synced images
     this->sync->registerCallback(std::bind(&ObjDetectorNode::process_image, this, _1, _2));
 
     // Copy rgb camera info directly into model
     this->rgb_info_sub = this->create_subscription<sensor_msgs::msg::CameraInfo>(
-        "/camera/mid/rgb/camera_info", 1,
-        [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr ci) { this->rgb_model.fromCameraInfo(ci); });
+            "/camera/mid/rgb/camera_info", 1,
+            [this](sensor_msgs::msg::CameraInfo::ConstSharedPtr ci) { this->rgb_model.fromCameraInfo(ci); });
 
     // Output detected objects
     this->point_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/object_poses", 5);
 }
 
-void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
-                                    const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
+void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr &rgb,
+                                    const sensor_msgs::msg::Image::ConstSharedPtr &depth) {
     // Read as bgr8 to avoid cones being blue in sim
     auto cv_rgb = cv_bridge::toCvShare(rgb, "bgr8");
     auto rgb_mat = cv_rgb->image;
@@ -51,7 +51,7 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     //this->point_pub->publish(poses);
 }
 
-std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat) {
+std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb_mat) {
     // Copy to gpu
     auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_SHARED_MEMORY);
 
@@ -99,7 +99,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 
     // Code to calculate and annotate centroids (Center of each masked area)
     std::vector<cv::Point2d> centers;
-    for (auto& contour : contours) {
+    for (auto &contour: contours) {
         // Calculate moments for each contour
         cv::Moments M = cv::moments(contour);
 
@@ -146,7 +146,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
     return centers;
 }
 
-geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Point2d>& object_locations,
-                                                                const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
+geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Point2d> &object_locations,
+                                                                const sensor_msgs::msg::Image::ConstSharedPtr &depth) {
     //TODO project
 }
