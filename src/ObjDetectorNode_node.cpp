@@ -163,21 +163,39 @@ geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vecto
     poses.header.frame_id = "mid_cam_link";  //TODO param
     poses.header.stamp = this->get_clock()->now();
 
+    // Rotation that rotates left 90 and backwards 90.
+    // This converts from camera coordinates in OpenCV to ROS coordinates
+    tf2::Quaternion optical_to_ros{};
+    optical_to_ros.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
+
     for (cv::Point2d center_distort : object_locations) {
+        if (!this->rgb_model.initialized()) {
+            continue;
+        }
+
         // Rectify points instead of whole image
         cv::Point2d center = this->rgb_model.rectifyPoint(center_distort);
 
         // Project pixel to camera space
-        auto ray = this->rgb_model.projectPixelTo3dRay(
-            center);  //TODO visualise to make sure we are in correct coordinate system
+        auto ray = this->rgb_model.projectPixelTo3dRay(center);
         float dist = depth.at<float>(center);
+
+        // If depth unavailable, then skip
+        if (dist == INFINITY || dist >= 10) {
+            continue;
+        }
+
         // Just resize the ray to be a vector at the distance of the depth pixel. This is in camera space
         auto point_3d = dist / cv::norm(ray) * ray;
 
+        // Convert from camera space to ros coordinates ("World" but wrt camera mount)
+        tf2::Vector3 tf_vec{point_3d.x, point_3d.y, point_3d.z};
+        auto world_vec = tf2::quatRotate(optical_to_ros, tf_vec);
+
         geometry_msgs::msg::Pose p{};
-        p.position.x = point_3d.x;
-        p.position.y = point_3d.y;
-        p.position.z = point_3d.z;
+        p.position.x = world_vec.x();
+        p.position.y = world_vec.y();
+        p.position.z = world_vec.z();
         poses.poses.push_back(p);
     }
 
