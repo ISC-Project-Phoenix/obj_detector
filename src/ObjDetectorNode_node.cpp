@@ -55,9 +55,6 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
     // Copy to gpu
     auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_SHARED_MEMORY);
 
-    cv::UMat hsv;
-    cv::cvtColor(rgb, hsv, cv::COLOR_BGR2HSV);  // Changes image to HSV (Hue, Sat, value)
-
     // Define gamma and create a lookup table
     //gamma will brighten shadows on image
     double gamma = 0.7; // Value < 1 'Image brightens shadows. Value > 1 Image darkens shadows
@@ -68,8 +65,11 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 
     // Apply gamma correction
     cv::UMat mat_gamma_corrected;
-    cv::LUT(hsv, lookUpTable, mat_gamma_corrected);
+    cv::LUT(rgb, lookUpTable, mat_gamma_corrected);
 
+    // Changes image to HSV (Hue, Sat, value)
+    cv::UMat hsv;
+    cv::cvtColor(mat_gamma_corrected, hsv, cv::COLOR_BGR2HSV);
 
     //Setting the HSV values to the color we are masking.
     cv::Scalar upperb = cv::Scalar(25, 255, 255);
@@ -132,7 +132,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
     // Show debug windows
     if (this->debug) {
         cv::UMat dbg;
-        rgb.copyTo(dbg);
+        mat_gamma_corrected.copyTo(dbg);
         for (auto &center: centers) {
             cv::circle(dbg, center, 5, cv::Scalar(255, 0, 0), -1); //Draws blue circle at centers
         }
