@@ -104,10 +104,10 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
         cv::Moments M = cv::moments(contour);
 
         // Threshold for minimum contour area. Only a masked object of 1500 or more pixels will return a center pixel
-        double areaThreshold = 1500.0;
+        double areaThreshold = 1500.0 / (1280 * 720);
 
         // Checks if Masked Object is greater than areaThreshold.
-        if (M.m00 > areaThreshold) //M.m00 = total number of white pixels in contour.
+        if (M.m00 > areaThreshold * (rgb.rows * rgb.cols)) //M.m00 = total number of white pixels in contour.
         {
             //Uses moment values to find the center pixel (x,y)
             cv::Point2f center(M.m10 / M.m00, M.m01 / M.m00);
