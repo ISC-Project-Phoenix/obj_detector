@@ -49,7 +49,11 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
                                     const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
     // Read as bgr8 to avoid cones being blue in sim
     auto cv_rgb = cv_bridge::toCvShare(rgb, "bgr8");
-    auto rgb_mat = cv_rgb->image;
+    auto rgb_mat_distort = cv_rgb->image;
+
+    // Rectify the image, else wide angle cameras will go OOB and segfault
+    cv::Mat rgb_mat{};
+    this->rgb_model.rectifyImage(rgb_mat_distort, rgb_mat);
 
     auto cv_depth = cv_bridge::toCvShare(depth);
     auto depth_mat = cv_depth->image;
@@ -168,20 +172,18 @@ geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vecto
     tf2::Quaternion optical_to_ros{};
     optical_to_ros.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
 
-    for (cv::Point2d center_distort : object_locations) {
+    for (cv::Point2d center : object_locations) {
         if (!this->rgb_model.initialized()) {
             continue;
         }
 
-        // Rectify points instead of whole image
-        cv::Point2d center = this->rgb_model.rectifyPoint(center_distort);
-
         // Project pixel to camera space
         auto ray = this->rgb_model.projectPixelTo3dRay(center);
-        float dist = depth.at<float>(center);
+        // The oak-d uses shorts in mm, sim uses f32 in m
+        float dist = depth.type() == 2 ? (float) depth.at<short>(center) / 1000 : depth.at<float>(center);
 
         // If depth unavailable, then skip
-        if (dist == INFINITY || dist >= 10) {
+        if (dist == INFINITY || dist >= 10 || dist <= 0) {
             continue;
         }
 
