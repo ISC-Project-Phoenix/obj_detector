@@ -47,6 +47,11 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
 
 void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
                                     const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
+    if (!this->rgb_model.initialized()) {
+        RCLCPP_INFO(this->get_logger(), "Camera info not received, dropping");
+        return;
+    }
+
     // Read as bgr8 to avoid cones being blue in sim
     auto cv_rgb = cv_bridge::toCvShare(rgb, "bgr8");
     auto rgb_mat_distort = cv_rgb->image;
