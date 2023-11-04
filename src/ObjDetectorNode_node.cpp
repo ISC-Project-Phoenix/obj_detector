@@ -164,14 +164,13 @@ geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vecto
                                                                 const cv::Mat& depth) {
     geometry_msgs::msg::PoseArray poses{};
     poses.header.frame_id = "mid_cam_link";  //TODO param
-    poses.header.stamp = this->get_clock()->now();
 
     // Rotation that rotates left 90 and backwards 90.
     // This converts from camera coordinates in OpenCV to ROS coordinates
     tf2::Quaternion optical_to_ros{};
     optical_to_ros.setRPY(-M_PI / 2, 0.0, -M_PI / 2);
 
-    for (cv::Point2d center : object_locations) {
+    for (const cv::Point2d& center : object_locations) {
         if (!this->rgb_model.initialized()) {
             continue;
         }
@@ -200,5 +199,6 @@ geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vecto
         poses.poses.push_back(p);
     }
 
+    poses.header.stamp = this->get_clock()->now();
     return poses;
 }
