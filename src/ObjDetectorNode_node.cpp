@@ -163,7 +163,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Point2d>& object_locations,
                                                                 const cv::Mat& depth) {
     geometry_msgs::msg::PoseArray poses{};
-    poses.header.frame_id = "mid_cam_link";  //TODO param
+    poses.header.frame_id = this->get_parameter_or(std::string{"camera_frame"}, std::string{"mid_cam_link"});
 
     // Rotation that rotates left 90 and backwards 90.
     // This converts from camera coordinates in OpenCV to ROS coordinates
