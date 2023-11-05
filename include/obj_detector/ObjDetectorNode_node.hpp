@@ -11,34 +11,39 @@
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/image.hpp"
 
-typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::Image> MySyncPolicy;
+typedef message_filters::sync_policies::ApproximateTime<
+  sensor_msgs::msg::Image, sensor_msgs::msg::Image>
+  MySyncPolicy;
 
-class ObjDetectorNode : public rclcpp::Node {
+class ObjDetectorNode : public rclcpp::Node
+{
 private:
-    // To sync rgb and depth images from compressed streams
-    std::unique_ptr<image_transport::SubscriberFilter> rgb_syncer;
-    std::unique_ptr<image_transport::SubscriberFilter> depth_syncer;
-    std::unique_ptr<message_filters::Synchronizer<MySyncPolicy>> sync;
+  // To sync rgb and depth images from compressed streams
+  std::unique_ptr<image_transport::SubscriberFilter> rgb_syncer;
+  std::unique_ptr<image_transport::SubscriberFilter> depth_syncer;
+  std::unique_ptr<message_filters::Synchronizer<MySyncPolicy>> sync;
 
-    rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr point_pub;
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr point_pub;
 
-    rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr rgb_info_sub;
-    /// Geometric model of the rgb camera
-    image_geometry::PinholeCameraModel rgb_model;
+  rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr rgb_info_sub;
+  /// Geometric model of the rgb camera
+  image_geometry::PinholeCameraModel rgb_model;
 
-    bool debug;
+  bool debug;
 
 public:
-    ObjDetectorNode(const rclcpp::NodeOptions& options);
+  ObjDetectorNode(const rclcpp::NodeOptions & options);
 
-    /// Synced images callback
-    void process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
-                       const sensor_msgs::msg::Image::ConstSharedPtr& depth);
+  /// Synced images callback
+  void process_image(
+    const sensor_msgs::msg::Image::ConstSharedPtr & rgb,
+    const sensor_msgs::msg::Image::ConstSharedPtr & depth);
 
-    /// Returns the u,v pixel locations of every detected object in the unrectified image.
-    std::vector<cv::Point2d> detect_objects(const cv::Mat& rgb);
+  /// Returns the u,v pixel locations of every detected object in the unrectified image.
+  std::vector<cv::Point2d> detect_objects(const cv::Mat & rgb);
 
-    /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
-    geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Point2d>& object_locations,
-                                                   const sensor_msgs::msg::Image::ConstSharedPtr& depth);
+  /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
+  geometry_msgs::msg::PoseArray project_to_world(
+    const std::vector<cv::Point2d> & object_locations,
+    const sensor_msgs::msg::Image::ConstSharedPtr & depth);
 };
