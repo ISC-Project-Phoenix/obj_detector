@@ -73,8 +73,8 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb_mat)
     cv::cvtColor(mat_gamma_corrected, hsv, cv::COLOR_BGR2HSV);
 
     //Setting the HSV values to the color we are masking.
-    cv::Scalar upperb = cv::Scalar(25, 255, 255);
-    cv::Scalar lowerb = cv::Scalar(1, 120, 130);
+    cv::Scalar upperb = cv::Scalar(15, 255, 255);
+    cv::Scalar lowerb = cv::Scalar(0, 130, 130);
 
 
     //Applying the above bounds to the gamma_image to create mask
@@ -104,7 +104,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb_mat)
         cv::Moments M = cv::moments(contour);
 
         // Threshold for minimum contour area. Only a masked object of 1500 or more pixels will return a center pixel
-        double areaThreshold = 1500.0 / (1280 * 720);
+        double areaThreshold = 500.0 / (1280 * 720);
 
         // Checks if Masked Object is greater than areaThreshold.
         if (M.m00 > areaThreshold * (rgb.rows * rgb.cols)) //M.m00 = total number of white pixels in contour.
@@ -122,8 +122,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat &rgb_mat)
             double area_perimeter_ratio = cv::contourArea(contour) / cv::arcLength(contour, true);
 
             // Check the properties, compare with the typical properties of a cone
-            //CV_TEAM - Calculate specific values for the type of cones we will use, these values below are general TODO
-            if (aspect_ratio > 0.5 && aspect_ratio < 1.5 && area_perimeter_ratio > 0.20) {
+            if (aspect_ratio > 0.6 && aspect_ratio < 1.4 && area_perimeter_ratio > 4.50) {
                 centers.push_back(center);
 
             }

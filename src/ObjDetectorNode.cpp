@@ -1,6 +1,16 @@
 #include "obj_detector/ObjDetectorNode_node.hpp"
+#include "opencv2/opencv.hpp"
+using namespace cv;
+using namespace std;
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
+
+    //This code below was taken from python, but I want to code it in c++
+
+
+
+
+
     // Setup runtime
     rclcpp::init(argc, argv);
     rclcpp::executors::MultiThreadedExecutor exec;
