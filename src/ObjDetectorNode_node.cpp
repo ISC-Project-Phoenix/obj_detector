@@ -47,6 +47,9 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
 
 void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
                                     const sensor_msgs::msg::Image::ConstSharedPtr& depth) {
+    // Start time for latency testing
+    auto start_t = std::chrono::steady_clock::now();
+
     if (!this->rgb_model.initialized()) {
         RCLCPP_INFO(this->get_logger(), "Camera info not received, dropping");
         return;
@@ -69,6 +72,13 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     auto poses = this->project_to_world(object_locations, depth_mat);
 
     this->point_pub->publish(poses);
+
+    // Print e2e latency if desired
+    if (this->get_parameter_or("test_latency", false)) {
+        auto delta = std::chrono::steady_clock::now() - start_t;
+        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta).count();
+        calc_latency(ms);
+    }
 }
 
 std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat) {
@@ -151,9 +161,9 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
             cv::circle(dbg, center, 5, cv::Scalar(255, 0, 0), -1);  //Draws blue circle at centers
         }
 
-        cv::imshow("mask", mask);    // Shows image of mask
-        cv::imshow("centers", dbg);  // Shows image of mask
-        cv::pollKey();               // Lets you see the images above.
+        cv::imshow("mask", mask_dilated);  // Shows image of mask
+        cv::imshow("centers", dbg);        // Shows image of mask
+        cv::pollKey();                     // Lets you see the images above.
     }
 
     return centers;
@@ -200,4 +210,28 @@ geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vecto
 
     poses.header.stamp = this->get_clock()->now();
     return poses;
+}
+
+void ObjDetectorNode::calc_latency(long ms) const {
+    static std::array<uint64_t, 300> measurements;
+    static uint64_t index = 0;
+    measurements[index] = ms;
+    index = index + 1 > measurements.size() - 1 ? 0 : index + 1;
+
+    // Calc statistics
+    double mean = 0;
+    for (uint64_t i = 0; i != index; ++i) {
+        mean += (double)measurements[i];
+    }
+    mean /= (double)index + 1;
+
+    double mean2 = 0;
+    for (uint64_t i = 0; i != index; ++i) {
+        mean2 += std::pow((double)measurements[i], 2);
+    }
+    mean2 /= (double)index + 1;
+
+    double std_dev = sqrt(mean2 - std::pow(mean, 2));
+
+    RCLCPP_INFO(get_logger(), "Mean: %f Std-dev: %f", mean, std_dev);
 }

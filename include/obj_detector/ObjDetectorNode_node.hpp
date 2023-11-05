@@ -47,4 +47,5 @@ public:
     /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
     geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Point2d>& object_locations,
                                                    const cv::Mat& depth);
+    void calc_latency(long ms) const;
 };
