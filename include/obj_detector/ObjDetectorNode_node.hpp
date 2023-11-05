@@ -1,5 +1,8 @@
 #pragma once
 
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 #include <image_transport/image_transport.hpp>
 #include <image_transport/subscriber_filter.hpp>
 
@@ -31,6 +34,9 @@ private:
 
   bool debug;
 
+  std::unique_ptr<tf2_ros::TransformListener> tf_listen;
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer;
+
 public:
   ObjDetectorNode(const rclcpp::NodeOptions & options);
 
@@ -42,8 +48,8 @@ public:
   /// Returns the u,v pixel locations of every detected object in the unrectified image.
   std::vector<cv::Point2d> detect_objects(const cv::Mat & rgb);
 
+
   /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
-  geometry_msgs::msg::PoseArray project_to_world(
-    const std::vector<cv::Point2d> & object_locations,
-    const sensor_msgs::msg::Image::ConstSharedPtr & depth);
+  geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Point2d>& object_locations,
+                                                 const cv::Mat& depth);
 };

@@ -17,6 +17,8 @@ find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(OpenCV 4.2.0 REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 # Add source for node executable (link non-ros dependencies here)
 add_executable(obj_detector src/ObjDetectorNode.cpp src/ObjDetectorNode_node.cpp)
@@ -36,6 +38,8 @@ set(dependencies
         image_geometry
         cv_bridge
         OpenCV
+        tf2
+        tf2_ros
         )
 
 # Link ros dependencies
