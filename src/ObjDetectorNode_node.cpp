@@ -12,8 +12,12 @@
 using namespace std::placeholders;
 
 ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("ObjDetectorNode", options) {
+    // Declare random parameters we don't store in the class
+    this->declare_parameter("camera_frame", "mid_cam_link");
+    this->declare_parameter("test_latency", false);
+
     // Enable opencl acceleration
-    cv::ocl::setUseOpenCL(true);
+    cv::ocl::setUseOpenCL(this->declare_parameter("use_opencl", true));
     RCLCPP_INFO(this->get_logger(), "using opencl: %u", cv::ocl::haveOpenCL());
 
     // Either "compressed" or "raw"
@@ -74,7 +78,7 @@ void ObjDetectorNode::process_image(const sensor_msgs::msg::Image::ConstSharedPt
     this->point_pub->publish(poses);
 
     // Print e2e latency if desired
-    if (this->get_parameter_or("test_latency", false)) {
+    if (this->get_parameter("test_latency").as_bool()) {
         auto delta = std::chrono::steady_clock::now() - start_t;
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta).count();
         calc_latency(ms);
@@ -172,7 +176,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 geometry_msgs::msg::PoseArray ObjDetectorNode::project_to_world(const std::vector<cv::Point2d>& object_locations,
                                                                 const cv::Mat& depth) {
     geometry_msgs::msg::PoseArray poses{};
-    poses.header.frame_id = this->get_parameter_or(std::string{"camera_frame"}, std::string{"mid_cam_link"});
+    poses.header.frame_id = this->get_parameter(std::string{"camera_frame"}).as_string();
 
     // Rotation that rotates left 90 and backwards 90.
     // This converts from camera coordinates in OpenCV to ROS coordinates
