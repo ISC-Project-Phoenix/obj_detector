@@ -16,6 +16,12 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     this->declare_parameter("camera_frame", "mid_cam_link");
     this->declare_parameter("test_latency", false);
 
+    // Image filtering params
+    this->declare_parameter("area_threshold", 0.0);
+    this->declare_parameter("aspect_ratio_threshold_min", 0.0);
+    this->declare_parameter("aspect_ratio_threshold_max", 100000000.0);
+    this->declare_parameter("area_perimeter_ratio", 0.0);
+
     // Enable opencl acceleration
     cv::ocl::setUseOpenCL(this->declare_parameter("use_opencl", true));
     RCLCPP_INFO(this->get_logger(), "using opencl: %u", cv::ocl::haveOpenCL());
@@ -132,11 +138,9 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
         // Calculate moments for each contour
         cv::Moments M = cv::moments(contour);
 
-        // Threshold for minimum contour area. Only a masked object of 1500 or more pixels will return a center pixel
-        double areaThreshold = 500.0 / (1280 * 720);
-
-        // Checks if Masked Object is greater than areaThreshold.
-        if (M.m00 > areaThreshold * (rgb.rows * rgb.cols))  //M.m00 = total number of white pixels in contour.
+        // Checks if Masked Object has more pixels than our minimum (filters small objects)
+        if (M.m00 > (this->get_parameter("area_threshold").as_double() / (720 * 1280)) *
+                        (rgb.rows * rgb.cols))  //M.m00 = total number of white pixels in contour.
         {
             //Uses moment values to find the center pixel (x,y)
             cv::Point2f center(M.m10 / M.m00, M.m01 / M.m00);
@@ -151,7 +155,11 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
             double area_perimeter_ratio = cv::contourArea(contour) / cv::arcLength(contour, true);
 
             // Check the properties, compare with the typical properties of a cone
-            if (aspect_ratio > 0.6 && aspect_ratio < 1.4 && area_perimeter_ratio > 4.50) {
+            auto ar_min = this->get_parameter("aspect_ratio_threshold_min").as_double();
+            auto ar_max = this->get_parameter("aspect_ratio_threshold_max").as_double();
+            auto ap_ratio = this->get_parameter("area_perimeter_ratio").as_double();
+
+            if (aspect_ratio > ar_min && aspect_ratio < ar_max && area_perimeter_ratio > ap_ratio) {
                 centers.push_back(center);
             }
         }
