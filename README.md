@@ -22,4 +22,7 @@ where the center of the cone is.
 - `debug`: Enables debug visualisations
 - `test_latency`: Prints e2e latency statistics if true
 - `camera_frame`: Frame the poses will be published from
-
+- `area_threshold`: Sets minimum pixel value a contour will return a center
+- `aspect_ratio_threshold_min`: Minimum ratio (width/height) of contour 
+- `aspect_ratio_threshold_max`: Maximum ratio (width/height) of contour
+- `area_perimeter_ratio`: Area/perimeter of the contour 

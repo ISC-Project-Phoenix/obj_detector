@@ -151,7 +151,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
             // Calculate the aspect ratio of the bounding rectangle
             double aspect_ratio = (double)boundingRect.width / boundingRect.height;
 
-            // Calculate the ratio of the contour area to its arc length
+            // Calculate the ratio of the contour area to its arcLength(perimeter)
             double area_perimeter_ratio = cv::contourArea(contour) / cv::arcLength(contour, true);
 
             // Check the properties, compare with the typical properties of a cone
