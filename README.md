@@ -22,7 +22,7 @@ where the center of the cone is.
 - `debug`: Enables debug visualisations
 - `test_latency`: Prints e2e latency statistics if true
 - `camera_frame`: Frame the poses will be published from
-- `area_threshold`: Sets minimum pixels for a contour to return a center
-- `aspect_ratio_threshold_min`: Minimum ratio (width/height) of contour 
-- `aspect_ratio_threshold_max`: Maximum ratio (width/height) of contour
-- `area_perimeter_ratio`: Area/perimeter of the contour 
+- `area_threshold`: Minimum number of pixels allowed in potential cone, scaled by resolution"
+- `aspect_ratio_threshold_min`: Minimum ratio (width/height) of a contour that will return a center. Larger min + smaller max for wider objects. Smaller min + larger max for taller objects   
+- `aspect_ratio_threshold_max`: Maximum ratio (width/height) of a contour that will return a center. Larger min + smaller max for wider objects. Smaller min + larger max for taller objects
+- `area_perimeter_ratio`: Area/perimeter of the contour. Impacts what contours return a center.The larger the number the more contours will be rejected.
