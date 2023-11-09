@@ -1,0 +1,51 @@
+#ROS package you are documenting
+package_name = "obj_detector"
+repo = "https://github.com/ISC-Project-Phoenix/obj_detector"
+
+#You can have multiple nodes in one package
+[[nodes]]
+node_name = 'obj_detector'
+#Relitive to this file
+source_file = ['./src/obj_detector.cpp']
+summary = '''
+Cone object detection node. It takes depth images of orange cones and outputs points in 3d
+where the center of the cone is.
+'''
+
+#Your published topics (optional)
+[[nodes.publishes]]
+name = '/object_poses'
+description = '3d Pose of the detected cones. In the reference frame of the camera'
+
+#Your subscribed topics (optional)
+[[nodes.subscribes]]
+name = '/camera/mid/rgb'
+description = 'RGB images from the camera. Will be rectified.'
+
+[[nodes.subscribes]]
+name = '/camera/mid/depth'
+description = 'Depth images from camera. Assumed rectified.'
+
+[[nodes.subscribes]]
+name = '/camera/mid/rgb/camera_info'
+description = 'Rgb cameras camera info'
+
+#Your node parameters (optional)
+[[nodes.params]]
+name = 'transport_type'
+description = 'image_pipeline topic type for rgb. Defaults to raw'
+
+#Your node parameters (optional)
+[[nodes.params]]
+name = 'debug'
+description = 'Enables debug visualisations'
+
+#Your node parameters (optional)
+[[nodes.params]]
+name = 'test_latency'
+description = 'Prints e2e latency statistics if true'
+
+[[nodes.params]]
+name = 'camera_frame'
+description = 'Frame the poses will be published from'
+
