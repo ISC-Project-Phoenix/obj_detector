@@ -8,7 +8,7 @@
 class something:public DetectionStrategy {
 
 private:
-    Node& node;
+    Node& node; //TODO I don't understand this fully.
 
 
     // TODO impliment method...
