@@ -21,6 +21,7 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     this->declare_parameter("aspect_ratio_threshold_min", 0.0);
     this->declare_parameter("aspect_ratio_threshold_max", 100000000.0);
     this->declare_parameter("area_perimeter_ratio", 0.0);
+    this->declare_parameter("gamma_value", 0.7);
 
     // Enable opencl acceleration
     cv::ocl::setUseOpenCL(this->declare_parameter("use_opencl", true));
@@ -97,7 +98,7 @@ std::vector<cv::Point2d> ObjDetectorNode::detect_objects(const cv::Mat& rgb_mat)
 
     // Define gamma and create a lookup table
     //gamma will brighten shadows on image
-    double gamma = 0.7;  // Value < 1 'Image brightens shadows. Value > 1 Image darkens shadows
+    auto gamma = this->get_parameter("gamma_value").as_double();  // Value < 1 'Image brightens shadows. Value > 1 Image darkens shadows
     cv::Mat lookUpTable(1, 256, CV_8U);
     uchar* p = lookUpTable.ptr();
     for (int i = 0; i < 256; ++i) p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, gamma) * 255.0);
