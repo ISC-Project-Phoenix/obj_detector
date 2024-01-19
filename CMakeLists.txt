@@ -21,7 +21,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 
 # Add source for node executable (link non-ros dependencies here)
-add_executable(obj_detector src/ObjDetectorNode.cpp src/ObjDetectorNode_node.cpp)
+add_executable(obj_detector src/ObjDetectorNode.cpp src/ObjDetectorNode_node.cpp src/ConeDetectionStrategy.cpp)
 target_include_directories(obj_detector PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
@@ -69,6 +69,7 @@ if (BUILD_TESTING)
             tests/unit.cpp
             # Remember to add node source files
             src/ObjDetectorNode_node.cpp
+            src/ConeDetectionStrategy.cpp
             )
     ament_target_dependencies(${PROJECT_NAME}-test ${dependencies})
     target_include_directories(${PROJECT_NAME}-test PUBLIC

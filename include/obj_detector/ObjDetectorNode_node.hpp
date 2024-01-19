@@ -10,6 +10,7 @@
 #include "image_geometry/pinhole_camera_model.h"
 #include "message_filters/sync_policies/approximate_time.h"
 #include "message_filters/synchronizer.h"
+#include "obj_detector/IDetectionStrategy.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/camera_info.hpp"
 #include "sensor_msgs/msg/image.hpp"
@@ -29,6 +30,9 @@ private:
     /// Geometric model of the rgb camera
     image_geometry::PinholeCameraModel rgb_model;
 
+    /// How we detect the center points of our objects. The "Frontend".
+    std::unique_ptr<IDetectionStrategy> detection_strat;
+
     bool debug;
 
     std::unique_ptr<tf2_ros::TransformListener> tf_listen;
@@ -40,9 +44,6 @@ public:
     /// Synced images callback
     void process_image(const sensor_msgs::msg::Image::ConstSharedPtr& rgb,
                        const sensor_msgs::msg::Image::ConstSharedPtr& depth);
-
-    /// Returns the u,v pixel locations of every detected object in the unrectified image.
-    std::vector<cv::Point2d> detect_objects(const cv::Mat& rgb);
 
     /// Takes a list of u,v pixel locations, and returns a list of those points in the real world (still in camera frame).
     geometry_msgs::msg::PoseArray project_to_world(const std::vector<cv::Point2d>& object_locations,
