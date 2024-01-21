@@ -19,6 +19,7 @@ find_package(message_filters REQUIRED)
 find_package(OpenCV 4.2.0 REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 # Add source for node executable (link non-ros dependencies here)
 add_executable(obj_detector src/ObjDetectorNode.cpp src/ObjDetectorNode_node.cpp src/ConeDetectionStrategy.cpp)
@@ -26,6 +27,13 @@ target_include_directories(obj_detector PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
 target_compile_features(obj_detector PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+
+# 2nd Node
+add_executable(detection_cat src/DetectionCatNode.cpp src/DetectionCatNode_node.cpp)
+target_include_directories(detection_cat PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>)
+target_compile_features(detection_cat PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 
 # Make ros deps a variable so they get linked to tests as well
 set(dependencies
@@ -40,6 +48,7 @@ set(dependencies
         OpenCV
         tf2
         tf2_ros
+        tf2_geometry_msgs
         )
 
 # Link ros dependencies
@@ -48,7 +57,15 @@ ament_target_dependencies(
         ${dependencies}
 )
 
+ament_target_dependencies(
+        detection_cat
+        ${dependencies}
+)
+
 install(TARGETS obj_detector
+        DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS detection_cat
         DESTINATION lib/${PROJECT_NAME})
 
 # Uncomment below to make launch files available if created
