@@ -23,8 +23,9 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     this->declare_parameter("area_perimeter_ratio", 0.0);
 
     // Enable opencl acceleration
-    cv::ocl::setUseOpenCL(this->declare_parameter("use_opencl", true));
-    RCLCPP_INFO(this->get_logger(), "using opencl: %u", cv::ocl::haveOpenCL());
+    bool use_ocl = this->declare_parameter("use_opencl", true);
+    cv::ocl::setUseOpenCL(use_ocl);
+    RCLCPP_INFO(this->get_logger(), "using opencl: %u", use_ocl && cv::ocl::haveOpenCL());
 
     // Either "compressed" or "raw"
     std::string transport_type = this->declare_parameter("transport_type", "raw");

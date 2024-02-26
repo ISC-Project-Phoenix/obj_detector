@@ -2,7 +2,7 @@
 
 std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rgb_mat) {
     // Copy to gpu
-    auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_SHARED_MEMORY);
+    auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_DEVICE_MEMORY);
 
     // Define gamma and create a lookup table
     //gamma will brighten shadows on image
