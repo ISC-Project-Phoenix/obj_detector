@@ -30,7 +30,7 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     // Either "compressed" or "raw"
     std::string transport_type = this->declare_parameter("transport_type", "raw");
     // Show debug views or not
-    this->debug = this->declare_parameter<bool>("debug", true);
+    this->debug = this->declare_parameter<bool>("debug", false);
 
     RCLCPP_INFO(this->get_logger(), "Detecting using transport: %s", transport_type.c_str());
 
