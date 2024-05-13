@@ -21,6 +21,9 @@ ObjDetectorNode::ObjDetectorNode(const rclcpp::NodeOptions& options) : Node("Obj
     this->declare_parameter("aspect_ratio_threshold_min", 0.0);
     this->declare_parameter("aspect_ratio_threshold_max", 100000000.0);
     this->declare_parameter("area_perimeter_ratio", 0.0);
+    this->declare_parameter("hsv_upperb", std::vector<int>{15, 255, 255});
+    this->declare_parameter("hsv_lowerb", std::vector<int>{0, 130, 130});
+    this->declare_parameter("gamma", 0.7);
 
     // Enable opencl acceleration
     bool use_ocl = this->declare_parameter("use_opencl", true);

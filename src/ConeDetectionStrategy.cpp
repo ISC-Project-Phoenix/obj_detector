@@ -6,10 +6,9 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
 
     // Define gamma and create a lookup table
     //gamma will brighten shadows on image
-    double gamma = 0.7;  // Value < 1 'Image brightens shadows. Value > 1 Image darkens shadows
     cv::Mat lookUpTable(1, 256, CV_8U);
     uchar* p = lookUpTable.ptr();
-    for (int i = 0; i < 256; ++i) p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, gamma) * 255.0);
+    for (int i = 0; i < 256; ++i) p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, this->gamma) * 255.0);
 
     // Apply gamma correction
     cv::UMat mat_gamma_corrected;
@@ -19,13 +18,9 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
     cv::UMat hsv;
     cv::cvtColor(mat_gamma_corrected, hsv, cv::COLOR_BGR2HSV);
 
-    //Setting the HSV values to the color we are masking.
-    cv::Scalar upperb = cv::Scalar(15, 255, 255);
-    cv::Scalar lowerb = cv::Scalar(0, 130, 130);
-
     //Applying the above bounds to the gamma_image to create mask
     cv::UMat mask;
-    cv::inRange(hsv, lowerb, upperb, mask);
+    cv::inRange(hsv, this->lowerb, this->upperb, mask);
 
     // Define the structuring element for the morphological operations (Required for dilation operation)
     int morphSize = 3;  // change this as per requirement
@@ -48,7 +43,7 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
         cv::Moments M = cv::moments(contour);
 
         // Checks if Masked Object has more pixels than our minimum (filters small objects)
-        if (M.m00 > (this->parent.get_parameter("area_threshold").as_double() / (720 * 1280)) *
+        if (M.m00 > (this->area_threshold / (720 * 1280)) *
                         (rgb.rows * rgb.cols))  //M.m00 = total number of white pixels in contour.
         {
             //Uses moment values to find the center pixel (x,y)
@@ -61,21 +56,21 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
             double aspect_ratio = (double)boundingRect.width / boundingRect.height;
 
             // Calculate the ratio of the contour area to its arcLength(perimeter)
-            double area_perimeter_ratio = cv::contourArea(contour) / cv::arcLength(contour, true);
+            double area_perimeter_ratio_actual = cv::contourArea(contour) / cv::arcLength(contour, true);
 
             // Check the properties, compare with the typical properties of a cone
-            auto ar_min = this->parent.get_parameter("aspect_ratio_threshold_min").as_double();
-            auto ar_max = this->parent.get_parameter("aspect_ratio_threshold_max").as_double();
-            auto ap_ratio = this->parent.get_parameter("area_perimeter_ratio").as_double();
+            auto ar_min = this->aspect_ratio_threshold_min;
+            auto ar_max = this->aspect_ratio_threshold_max;
+            auto ap_ratio = this->area_perimeter_ratio;
 
-            if (aspect_ratio > ar_min && aspect_ratio < ar_max && area_perimeter_ratio > ap_ratio) {
+            if (aspect_ratio > ar_min && aspect_ratio < ar_max && area_perimeter_ratio_actual > ap_ratio) {
                 centers.push_back(center);
             }
         }
     }
 
     // Show debug windows
-    if (this->parent.get_parameter("debug").as_bool()) {
+    if (this->debug) {
         cv::UMat dbg;
         mat_gamma_corrected.copyTo(dbg);
         for (auto& center : centers) {
