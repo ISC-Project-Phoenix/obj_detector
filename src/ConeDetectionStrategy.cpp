@@ -4,23 +4,37 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
     // Copy to gpu
     auto rgb = rgb_mat.getUMat(cv::ACCESS_READ, cv::USAGE_ALLOCATE_DEVICE_MEMORY);
 
-    // Define gamma and create a lookup table
-    //gamma will brighten shadows on image
-    cv::Mat lookUpTable(1, 256, CV_8U);
-    uchar* p = lookUpTable.ptr();
-    for (int i = 0; i < 256; ++i) p[i] = cv::saturate_cast<uchar>(pow(i / 255.0, this->gamma) * 255.0);
 
-    // Apply gamma correction
-    cv::UMat mat_gamma_corrected;
-    cv::LUT(rgb, lookUpTable, mat_gamma_corrected);
+// Split the channels
+    std::vector<cv::UMat> channels;
+    cv::split(bgr, channels); // channels[0] is blue, channels[1] is green, channels[2] is red
 
-    // Changes image to HSV (Hue, Sat, value)
+// Apply custom processing:
+// For instance, highlight red/orange by dividing red by green, considering orange has higher red and lower green
+    cv::UMat red_highlighted;
+    cv::divide(channels[2], channels[1], red_highlighted); // You might need to normalize and scale this for better results
+
+// Threshold the image to create a binary mask where the red/orange areas are white
+    cv::UMat mask_orange;
+    double thresh_val = 1; // Determine the best threshold value through experimentation
+    cv::threshold(red_highlighted, mask_orange, thresh_val, 255, cv::THRESH_BINARY);
+
+// Enhance contrast if necessary (using histogram equalization, for example)
+// cv::equalizeHist(mask_orange, mask_orange); // Uncomment and use if needed
+
+// Merge the modified channel back or leave the grayscale as is for further processing
+    cv::UMat image_with_highlighted_cones;
+    if (false) { // If you want to merge the highlighted red back into the BGR image, set this to true
+        channels[2] = red_highlighted; // Replace the red channel with our processed channel
+        cv::merge(channels, image_with_highlighted_cones);
+    } else {
+        // Or simply continue with the mask_orange
+        cv::cvtColor(mask_orange, image_with_highlighted_cones, cv::COLOR_GRAY2BGR);
+    }
+
+// Now convert this image to HSV and apply cv::inRange() to get the final mask
     cv::UMat hsv;
-    cv::cvtColor(mat_gamma_corrected, hsv, cv::COLOR_BGR2HSV);
-
-    //Applying the above bounds to the gamma_image to create mask
-    cv::UMat mask;
-    cv::inRange(hsv, this->lowerb, this->upperb, mask);
+    cv::cvtColor(image_with_highlighted_cones, hsv, cv::COLOR_BGR2HSV);
 
     // Define the structuring element for the morphological operations (Required for dilation operation)
     int morphSize = 3;  // change this as per requirement
