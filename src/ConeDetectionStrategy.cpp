@@ -7,7 +7,7 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
 
 // Split the channels
     std::vector<cv::UMat> channels;
-    cv::split(bgr, channels); // channels[0] is blue, channels[1] is green, channels[2] is red
+    cv::split(rgb, channels); // channels[0] is blue, channels[1] is green, channels[2] is red
 
 // Apply custom processing:
 // For instance, highlight red/orange by dividing red by green, considering orange has higher red and lower green
@@ -16,7 +16,7 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
 
 // Threshold the image to create a binary mask where the red/orange areas are white
     cv::UMat mask_orange;
-    double thresh_val = 1; // Determine the best threshold value through experimentation
+    double thresh_val = 1.5; // Determine the best threshold value through experimentation
     cv::threshold(red_highlighted, mask_orange, thresh_val, 255, cv::THRESH_BINARY);
 
 // Enhance contrast if necessary (using histogram equalization, for example)
@@ -24,31 +24,28 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
 
 // Merge the modified channel back or leave the grayscale as is for further processing
     cv::UMat image_with_highlighted_cones;
-    if (false) { // If you want to merge the highlighted red back into the BGR image, set this to true
-        channels[2] = red_highlighted; // Replace the red channel with our processed channel
-        cv::merge(channels, image_with_highlighted_cones);
-    } else {
-        // Or simply continue with the mask_orange
-        cv::cvtColor(mask_orange, image_with_highlighted_cones, cv::COLOR_GRAY2BGR);
-    }
+    //if (false) { // If you want to merge the highlighted red back into the BGR image, set this to true
+    channels[2] = red_highlighted; // Replace the red channel with our processed channel
+    cv::merge(channels, image_with_highlighted_cones);
+
 
 // Now convert this image to HSV and apply cv::inRange() to get the final mask
     cv::UMat hsv;
     cv::cvtColor(image_with_highlighted_cones, hsv, cv::COLOR_BGR2HSV);
 
     // Define the structuring element for the morphological operations (Required for dilation operation)
-    int morphSize = 3;  // change this as per requirement
+    int morphSize = 1;  // change this as per requirement
     cv::Mat element = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2 * morphSize + 1, 2 * morphSize + 1),
                                                 cv::Point(morphSize, morphSize));
 
     // Perform dilation
     cv::UMat mask_dilated;
-    cv::dilate(mask, mask_dilated, element);
+    cv::dilate(mask_orange, mask_dilated, element);
 
     // Find contours (Boundary lines of each masked area)
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
-    cv::findContours(mask_dilated, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+    cv::findContours(mask_orange, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
     // Code to calculate and annotate centroids (Center of each masked area)
     std::vector<cv::Point2d> centers;
@@ -85,13 +82,13 @@ std::vector<cv::Point2d> ConeDetectionStrategy::detect_objects(const cv::Mat& rg
 
     // Show debug windows
     if (this->debug) {
-        cv::UMat dbg;
-        mat_gamma_corrected.copyTo(dbg);
+        cv::UMat dbg = rgb.clone();
+
         for (auto& center : centers) {
             cv::circle(dbg, center, 5, cv::Scalar(255, 0, 0), -1);  //Draws blue circle at centers
         }
 
-        cv::imshow("mask", mask_dilated);  // Shows image of mask
+        cv::imshow("mask", mask_orange);  // Shows image of mask
         cv::imshow("centers", dbg);        // Shows image of mask
         cv::pollKey();                     // Lets you see the images above.
     }
